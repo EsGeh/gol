@@ -47,8 +47,6 @@ startWorld = World {
 	wField = field 20 20
 }
 
-field width height = Field $ fromMaybe (error "field matrix creation failed!") $ m $ [ take width $ repeat (Cell Dead) | i <- [0..(height-1)] ]
-
 renderWorld :: World -> Picture
 renderWorld = undefined
 
