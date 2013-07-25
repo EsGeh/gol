@@ -1,5 +1,7 @@
 module GameData where
 
-data Cell Status = Cell Status
+data Field countX countY = Matrix countY countX Cell
+
+data Cell = Cell Status
 
 data Status = Dead | Alive

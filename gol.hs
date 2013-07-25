@@ -1,6 +1,9 @@
 module Main where
 
-import GameData
+import GameData hiding (Field)
+import qualified GameData as GD
+
+import Card.Unary
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
@@ -8,9 +11,11 @@ import Graphics.Gloss.Interface.Pure.Game
 type Time = Float
 type DeltaT = Float
 
+type Field = GD.Field N9 N9
+
 data World = World {
 	settings :: Settings,
-	field :: Field
+	field :: Field 
 }
 
 data Settings = Settings
