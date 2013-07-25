@@ -6,7 +6,14 @@ import Graphics.Gloss.Interface.Pure.Game
 type Time = Float
 type DeltaT = Float
 
-type World = ()
+data World = World {
+	settings :: Settings,
+	grid :: Grid
+}
+
+data Settings = Settings
+--data Grid = Node [ Direction -> Node ]
+data Grid = Grid 
 
 main = do
 	play
