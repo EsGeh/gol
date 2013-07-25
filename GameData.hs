@@ -1,6 +1,8 @@
 module GameData where
 
-data Field = Matrix Cell
+import Matrix
+
+data Field = Field (Matrix Cell)
 
 data Cell = Cell Status
 

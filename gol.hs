@@ -1,12 +1,13 @@
 module Main where
 
 import GameData 
+import Matrix
 --import qualified GameData as GD
 
-import Card.Unary
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
+import Data.Maybe
 
 type Time = Float
 type DeltaT = Float
@@ -16,8 +17,8 @@ type DeltaT = Float
 --type Field = GD.Field N9 N9
 
 data World = World {
-	settings :: Settings,
-	field :: Field 
+	wSettings :: Settings,
+	wField :: Field 
 }
 
 data Settings = Settings
@@ -34,14 +35,19 @@ main = do
 		eventHandler
 		moveWorld
 
-disp = undefined
-bgColor = undefined
+disp = InWindow "GAME OF LIFE!!!" (800,600) (100,100)
+bgColor = black
 
 framerate :: Int
-framerate = undefined
+framerate = 40
 
 startWorld :: World
-startWorld = undefined
+startWorld = World {
+	wSettings = Settings,
+	wField = field 20 20
+}
+
+field width height = Field $ fromMaybe (error "field matrix creation failed!") $ m $ [ take width $ repeat (Cell Dead) | i <- [0..(height-1)] ]
 
 renderWorld :: World -> Picture
 renderWorld = undefined
