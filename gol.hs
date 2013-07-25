@@ -1,5 +1,7 @@
 module Main where
 
+import GameData
+
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
 
@@ -8,7 +10,7 @@ type DeltaT = Float
 
 data World = World {
 	settings :: Settings,
-	grid :: Grid
+	field :: Field
 }
 
 data Settings = Settings
