@@ -7,68 +7,53 @@ module Matrix(
 	WithOriginMatr,WithLog,Log(..),Origin(..),LogVal(..),
 	mGetWithOrigin 
 	) where
---import Card as Unary
+import CountingList as CL
 import qualified PrettyShow as Pretty
 
 import Data.Foldable hiding(concat,toList)
 import Data.Foldable as Fold hiding(concat,toList)
-import Data.List hiding(foldl,foldr)
+import Data.List hiding(foldl,foldr,(!!))
 --import qualified Data.List as List
-import Prelude hiding(foldl,foldr,Left,Right)
+import Prelude hiding(foldl,foldr,Left,Right,(!!))
 import Data.Monoid 
 import Data.Maybe
 import Control.Monad.Writer
 import Data.Ratio
-import Data.Array
 
 
-data Matrix t = M (Array Int (Array Int t))
---data Matrix t = M (CountingList m (CountingList n t))
+data Matrix m n t = M (CountingList m (CountingList n t))
 -- instances
-instance (Show t) => Show (Matrix t) where
+instance (Show t,Card n, Card m) => Show (Matrix m n t) where
 	show m@(M listLines) = 
-		concat $ intersperse "\n" $ elems $ fmap (prettyShow " | " ((fromIntegral maxLength)%1) 0 ) $ listLines
+		concat $ intersperse "\n" $ map (prettyShow " | " ((fromIntegral maxLength)%1) 0 . toList) $ toList listLines
 			where
 				maxLength = Fold.maximum $ fmap (length . show) m
 				prettyShow = Pretty.showContainer "" "" " " " " Pretty.LeftJust
-instance Functor Matrix where
+instance (Card m, Card n) => Functor (Matrix m n) where
 	fmap f (M listLines) = M $ fmap (fmap f) listLines
-instance Foldable Matrix where
+instance (Card m, Card n) => Foldable (Matrix m n) where
 	foldMap toMonoid (M l) = foldMap (foldMap toMonoid) l
 
-arrayFromList :: Int -> [a] -> Array Int a
-arrayFromList length list = mkArray length (\i -> list !! i)
-
-mkArray :: Int -> (Int -> a) -> Array Int a
-mkArray length f = array (0,length-1) [ (i,f i) | i<-[0..(length-1)] ]
-
 -- function
-m :: [[t]] -> Maybe (Matrix t)
---m listLines = M $ fromList countLines (map (fromList countCol) listLines)
-m listLines = if (isValid listLines)
-	then Just $ M $ arrayFromList height $ map (arrayFromList width) listLines
-	else Nothing
-	where
-		isValid listLines = foldl (\x y -> x && (length y==width)) True listLines
-		height = length listLines
-		width = length $ listLines !! 0
+m :: (Card countX, Card countY) => countY -> countX -> [[t]] -> Matrix countY countX t
+m countLines countCol listLines = M $ fromList countLines (map (fromList countCol) listLines)
 
-mGetHeight :: Matrix t -> Int
-mGetHeight (M listLines) = (+1) $ snd $ bounds $ listLines
-mGetWidth :: Matrix t -> Int
-mGetWidth m@(M listLines) = if (mGetHeight m > 0) then ((+1) $ snd $ bounds $ listLines ! 0) else 0
+mGetHeight :: (Card height, Card width) => Matrix height width t -> Int
+mGetHeight (M listLines) = clLength listLines
+mGetWidth :: (Card m, Card n) => Matrix m n t -> Int
+mGetWidth (M listLines) = clLength $ listLines !! 0
 
 
-mSqr = m
+mSqr count = m count count
 
-mGet :: MatrIndex -> Matrix t -> t
-mGet index (M listLines) = (listLines ! row) ! col
+mGet :: (Card height, Card width) => MatrIndex -> Matrix height width t -> t
+mGet index (M listLines) = (listLines CL.!! row) CL.!! col
 	where
 		row = fst index; col = snd index
 
 mIndex m n = (m,n)
 
-mGetWithOrigin :: MatrIndex -> Matrix t -> WithOriginMatr t
+mGetWithOrigin :: (Card height, Card width, Show t) => MatrIndex -> Matrix height width t -> WithOriginMatr t
 mGetWithOrigin index matr = do
 	tell $ Log [(ValO index)]
 	return $ val

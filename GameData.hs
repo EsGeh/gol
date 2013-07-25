@@ -1,6 +1,6 @@
 module GameData where
 
-data Field countX countY = Matrix countY countX Cell
+data Field = Matrix Cell
 
 data Cell = Cell Status
 
