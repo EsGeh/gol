@@ -7,14 +7,9 @@ import Matrix
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
-import Data.Maybe
 
 type Time = Float
 type DeltaT = Float
-
---newtype MATRIX = forall width height . MATRIX (Matrix width height)
-
---type Field = GD.Field N9 N9
 
 data World = World {
 	wSettings :: Settings,
@@ -22,8 +17,6 @@ data World = World {
 }
 
 data Settings = Settings
---data Grid = Node [ Direction -> Node ]
-data Grid = Grid 
 
 main = do
 	play
@@ -49,6 +42,11 @@ startWorld = World {
 
 renderWorld :: World -> Picture
 renderWorld = undefined
+
+renderCell :: Cell -> Point -> Picture
+renderCell cell position = case cell of
+	Cell Dead -> Blank
+	Cell Alive -> Blank
 
 eventHandler :: Event -> World -> World
 eventHandler = undefined

@@ -1,6 +1,7 @@
 module GameData where
 
 import Matrix
+import Data.Maybe
 
 data Field = Field (Matrix Cell)
 
