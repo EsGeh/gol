@@ -1,11 +1,22 @@
+-- | This module exports a matrix type as well as some functions to work with it
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Matrix(
+	-- * Types
 	Matrix(),
-	MatrIndex,IndexRow,IndexCol,
+	MatrIndex,IndexRow,IndexCol,Width,Height,
+	-- * Matrix Pseudo Constructors
+	m,mSqr,
+	-- * Getter
+	mGet,mGetHeight,mGetWidth,
+	-- ** Monadic Getters
+	mGetWithOrigin,
+	-- ** Lists of Indices
 	mGetAllIndexRow,mGetAllIndexCol,mGetAllIndex,
-	m,mSqr,mGetHeight,mGetWidth,mGet,
-	WithOriginMatr,WithLog,Log(..),Origin(..),LogVal(..),
-	mGetWithOrigin 
+	-- * Special Monads (experimental)
+	LogOrigin,
+	Origin(..),
+	WithLog,Log(..),
+	LogVal(..)
 	) where
 --import Card as Unary
 import qualified PrettyShow as Pretty
@@ -21,10 +32,18 @@ import Control.Monad.Writer
 import Data.Ratio
 import Data.Array
 
-
+-- |a matrix:
 data Matrix t = M (Array Int (Array Int t))
---data Matrix t = M (CountingList m (CountingList n t))
--- instances
+-- |index to access elements in a matrix
+type MatrIndex = (IndexRow,IndexCol)
+type IndexRow = Int
+type IndexCol = Int
+type Width = Int
+type Height = Int
+
+---------------------------------------------------------------------------------------
+-- instance declarations: -------------------------------------------------------------
+---------------------------------------------------------------------------------------
 instance (Show t) => Show (Matrix t) where
 	show m@(M listLines) = 
 		concat $ intersperse "\n" $ elems $ fmap (prettyShow " | " ((fromIntegral maxLength)%1) 0 ) $ listLines
@@ -36,15 +55,9 @@ instance Functor Matrix where
 instance Foldable Matrix where
 	foldMap toMonoid (M l) = foldMap (foldMap toMonoid) l
 
-arrayFromList :: Int -> [a] -> Array Int a
-arrayFromList length list = mkArray length (\i -> list !! i)
 
-mkArray :: Int -> (Int -> a) -> Array Int a
-mkArray length f = array (0,length-1) [ (i,f i) | i<-[0..(length-1)] ]
-
--- function
+-- |creates a matrix from a list of lines. The result is packed into Maybe, because the input might be invalid
 m :: [[t]] -> Maybe (Matrix t)
---m listLines = M $ fromList countLines (map (fromList countCol) listLines)
 m listLines = if (isValid listLines)
 	then Just $ M $ arrayFromList height $ map (arrayFromList width) listLines
 	else Nothing
@@ -53,22 +66,31 @@ m listLines = if (isValid listLines)
 		height = length listLines
 		width = length $ listLines !! 0
 
-mGetHeight :: Matrix t -> Int
+-- |creates a matrix from a list of lists. If the input is invalid, 'error' is called
+mUnsafe :: [[t]] -> Matrix t
+mUnsafe listLines = fromMaybe (error "failed to create Matrix from list") $ m listLines
+
+-- |create a square matrix
+mSqr :: [[t]] -> Maybe (Matrix t)
+mSqr = m
+	-- to do: check if input makes up a valid square matrix
+
+-- |retrieve the height of a matrix, that is the number of lines it consists of
+mGetHeight :: Matrix t -> Height
 mGetHeight (M listLines) = (+1) $ snd $ bounds $ listLines
-mGetWidth :: Matrix t -> Int
+-- |retrieve the width of a matrix, that is the number of columns it consists of
+mGetWidth :: Matrix t -> Width
 mGetWidth m@(M listLines) = if (mGetHeight m > 0) then ((+1) $ snd $ bounds $ listLines ! 0) else 0
 
 
-mSqr = m
-
+-- |retrieve the element by its index from the matrix
 mGet :: MatrIndex -> Matrix t -> t
 mGet index (M listLines) = (listLines ! row) ! col
 	where
 		row = fst index; col = snd index
 
-mIndex m n = (m,n)
-
-mGetWithOrigin :: MatrIndex -> Matrix t -> WithOriginMatr t
+-- |returns an element, packed in the 'WithOriginMatr' Monad
+mGetWithOrigin :: MatrIndex -> Matrix t -> LogOrigin t
 mGetWithOrigin index matr = do
 	tell $ Log [(ValO index)]
 	return $ val
@@ -77,18 +99,38 @@ mGetAllIndexRow matr = [0..(mGetHeight matr -1)]
 mGetAllIndexCol matr = [0..(mGetWidth matr -1)]
 mGetAllIndex matr = [(row,col) | row <- mGetAllIndexRow matr, col <- mGetAllIndexCol matr ]
 
---mGetAllIndexDist matr = [ index | index <- mGetAllIndex matr, (fst index /= snd index) ]
 
+---------------------------------------------------------------------------------------
+-- Monads  ----------------------------------------------------------------------------
+---------------------------------------------------------------------------------------
 
---mGetAllWC matr = [ mGetWC m n matr | m <- [0..(mGetHeight matr - 1)], n <- [0..(mGetWidth matr - 1)] ]
+-- |This Monad enables you to make calculations based on values that possibly come from a matrix,
+-- while logging where the values come from
+-- Example:
+--
+-- >>> let test = mUnsafe [[1,2],[3,4]] -- creating a test matrix
+--
+-- >>> runWriter $ mGetWithOrigin (0,1) test
+-- (2,(0,1))
+--
+-- first entry is the value, second is the log of this value (in fact packed into 'Origin'):
+-- 
+-- >>> :t runWriter $ mGetWithOrigin (0,1) ma
+-- :: (Integer, Log (Origin MatrIndex))
 
-type MatrIndex = (IndexRow,IndexCol)
-type IndexRow = Int
-type IndexCol = Int
-type WithOriginMatr t = Writer (Log (Origin MatrIndex)) t
+type LogOrigin t = Writer (Log (Origin MatrIndex)) t
 type WithLog t = Writer (Log (LogVal t)) t
---type WC w t = (Writer w t)
 
+-- |defines a log, which is considered a sequence of any type.
+-- if printed it looks like this:
+--
+--	thing0 -> thing1 -> thing2 -> ...
+{-type Log logType = [logType]
+showLog :: (Show logType) => Log logType -> String
+showLog listOfEntries = foldl conc "" $ map show listOfEntries 
+	where
+		conc "" y = y
+		conc x y = x ++ " -> " ++ y-}
 newtype Log logType = Log { getLog :: [logType] }
 	deriving(Monoid)
 instance (Show logType) => Show (Log logType) where
@@ -97,13 +139,25 @@ instance (Show logType) => Show (Log logType) where
 			conc "" y = y
 			conc x y = x ++ " -> " ++ y
 
-data Origin t = NilO | ValO t 
-instance (Show t) => Show (Origin t) where
+-- |The encodes that the origin might be given:
+data Origin t =
+	ValO t -- ^ origin
+	| NilO -- ^ origin not known
+	deriving(Show)
+{-instance (Show t) => Show (Origin t) where
 	show NilO = ""
-	show (ValO val) = show val
+	show (ValO val) = show val-}
 
 data LogVal t = NilL | ValL t | Fun String
 instance (Show t) => Show (LogVal t) where
 	show NilL = ""
 	show (ValL val) = show val
 	show (Fun str) = str
+
+
+---------------------------------------------------------------------------------------
+-- internal functions -----------------------------------------------------------------
+---------------------------------------------------------------------------------------
+type Length = Int
+arrayFromList :: Length -> [a] -> Array Length a
+arrayFromList length list = listArray (0,(length-1)) list

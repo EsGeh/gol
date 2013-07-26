@@ -52,7 +52,8 @@ startWorld = World {
 }
 
 renderWorld :: World -> Picture
-renderWorld world = Blank -- TO DO: use renderCell to render the whole field
+renderWorld world = Pictures $
+	
 
 -- creates a "view" from a position on the field
 viewFromPos :: Field -> PointOnField -> View
