@@ -9,6 +9,8 @@ module Matrix(
 	m,mSqr,
 	-- * Getter
 	mGet,mGetHeight,mGetWidth,
+	-- * Setter
+	mSet,
 	-- ** Monadic Getters
 	mGetWithOrigin,
 	-- ** Lists of Indices
@@ -109,6 +111,12 @@ mGetWithLog index matr = do
 mGetAllIndexRow matr = [0..(mGetHeight matr -1)]
 mGetAllIndexCol matr = [0..(mGetWidth matr -1)]
 mGetAllIndex matr = [(row,col) | row <- mGetAllIndexRow matr, col <- mGetAllIndexCol matr ]
+
+-- |set the element at a specific index inside a matrix
+mSet :: MatrIndex -> t -> Matrix t -> Matrix t
+mSet index val matr = mapWithIndex maybeSet matr
+	where
+		maybeSet index' val' = if index' == index then val else val'
 
 
 ---------------------------------------------------------------------------------------

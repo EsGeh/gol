@@ -9,6 +9,7 @@ import qualified Data.Foldable as F
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game hiding (Up,Down)
+import qualified Graphics.Gloss.Interface.Pure.Game as G
 
 type Time = Float
 type DeltaT = Float
@@ -67,8 +68,9 @@ renderWorld :: World -> Picture
 renderWorld world =
 	Scale 1 (-1) $	-- flip y axis
 	Translate (-(fieldWidthOnScreen)/2) (- (fieldHeightOnScreen)/2) $ -- shift the picture, so that it begins in the upper left corner
-	Pictures [ renderBg, renderFields world]
+	Pictures [ renderBg, renderField world]
 
+-- render the background:
 renderBg = Color white $ Polygon path
 	where
 		path = [
@@ -79,8 +81,8 @@ renderBg = Color white $ Polygon path
 			fieldPos
 			]
 
-
-renderFields world = Pictures $ foldToPictureList $ createPictureMatrix field
+-- render the field using renderCell:
+renderField world = Pictures $ foldToPictureList $ createPictureMatrix field
 	where
 		field = wField world
 		foldToPictureList :: Matrix Picture -> [Picture]
@@ -109,11 +111,19 @@ renderCell cell ((x,y),(w,h)) view = let
 
 
 eventHandler :: Event -> World -> World
-eventHandler event = id -- TO DO: handle events
+eventHandler event world = case event of
+	EventKey (MouseButton button) G.Down _ (x,y) ->
+		world {
+			wField = mSet (screenPosToFieldPos (x,y)) (Cell Alive) $ (wField world)
+		}
+	otherwise -> world
 
 moveWorld :: DeltaT -> World -> World
 moveWorld deltaT = id -- TO DO: calculate world
 
+----------------------------------------------------------------------------------
+-- useful helper functions:
+----------------------------------------------------------------------------------
 
 -- creates a "view" from a position on the field
 viewFromPos :: Field -> PointOnField -> View
@@ -132,3 +142,9 @@ moveIndex field (x,y) dir = case dir of
 		niceMod val m = case signum val of
 			(-1) -> niceMod (val+m) m
 			(1) -> val `mod` m
+
+screenPosToFieldPos :: PointOnScreen -> PointOnField
+screenPosToFieldPos screenPos = divideByBoardSize $ mathToScreenCoords screenPos
+	where
+		divideByBoardSize (x,y) = ( floor $ x/fieldWidthOnScreen, floor $ y/fieldHeightOnScreen )
+		mathToScreenCoords (x,y) = (x - fieldWidthOnScreen/2, -y + fieldHeightOnScreen/2)
