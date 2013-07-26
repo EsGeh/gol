@@ -52,7 +52,7 @@ startWorld = World {
 }
 
 renderWorld :: World -> Picture
-renderWorld world = Pictures $
+renderWorld world = Blank
 	
 
 -- creates a "view" from a position on the field
