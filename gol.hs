@@ -13,8 +13,10 @@ import Graphics.Gloss.Interface.Pure.Game hiding (Up,Down)
 type Time = Float
 type DeltaT = Float
 
-type PointOnField = (Int,Int)
-type PointOnScreen = Point
+type PointOnField = MatrIndex -- (Int,Int)
+type PointOnScreen = (Float,Float)
+type SizeOnScreen = (Float,Float)
+type SquareOnScreen = (PointOnScreen,SizeOnScreen)
 
 data World = World {
 	wSettings :: Settings,
@@ -40,35 +42,71 @@ main = do
 		eventHandler
 		moveWorld
 
-disp = InWindow "GAME OF LIFE!!!" (800,600) (100,100)
+disp = InWindow "GAME OF LIFE!!!" windowPos windowSize
 bgColor = black
 
 framerate :: Int
 framerate = 40
 
+(windowX,windowY) = (100,100)
+windowPos = (windowX,windowY)
+(windowWidth,windowHeight) = (800,600)
+windowSize = (windowWidth,windowHeight)
+
+(fieldXOnScreen,fieldYOnScreen,fieldWidthOnScreen,fieldHeightOnScreen) = (0,0,400,300)
+fieldPos = (fieldXOnScreen,fieldYOnScreen)
+fieldSize = (fieldWidthOnScreen,fieldHeightOnScreen)
+
 startWorld :: World
 startWorld = World {
 	wSettings = Settings,
-	wField = field 20 20
+	wField = field 3 3
 }
 
 renderWorld :: World -> Picture
-renderWorld world = Pictures $ foldToPictureList $ createPictureMatrix field
+renderWorld world =
+	Scale 1 (-1) $	-- flip y axis
+	Translate (-(fieldWidthOnScreen)/2) (- (fieldHeightOnScreen)/2) $ -- shift the picture, so that it begins in the upper left corner
+	Pictures [ renderBg, renderFields world]
+
+renderBg = Color white $ Polygon path
+	where
+		path = [
+			fieldPos,
+			(fieldXOnScreen+fieldWidthOnScreen, fieldYOnScreen),
+			(fieldXOnScreen+fieldWidthOnScreen, fieldYOnScreen + fieldHeightOnScreen),
+			(fieldXOnScreen, fieldYOnScreen + fieldHeightOnScreen),
+			fieldPos
+			]
+
+
+renderFields world = Pictures $ foldToPictureList $ createPictureMatrix field
 	where
 		field = wField world
 		foldToPictureList :: Matrix Picture -> [Picture]
 		foldToPictureList matrOfPictures = F.foldr (:) [] matrOfPictures
 		createPictureMatrix field' = mapWithIndex (renderCell' field') field'
 			where
-				renderCell' field pos val = renderCell val pos (viewFromPos field pos)
-
+				renderCell' field'' pos val = renderCell val (squareOnScreenFromPosOnField pos) (viewFromPos field'' pos)
+				squareOnScreenFromPosOnField :: PointOnField -> SquareOnScreen
+				squareOnScreenFromPosOnField (x,y) = ( (x'*w,y'*h), (w,h))
+					where
+						(x',y') = (fromIntegral x, fromIntegral y)
+				w = fieldWidthOnScreen / (fromIntegral $ mGetWidth field)
+				h = fieldHeightOnScreen / (fromIntegral $ mGetHeight field)
 
 -- renders one single cell at a specific position on the field
 -- gets a "view" from that position as well.
-renderCell :: Cell -> PointOnField -> View -> Picture
-renderCell cell position view = case cell of
-	Cell Dead -> Blank
-	Cell Alive -> Blank -- TO DO: render cell
+renderCell :: Cell -> SquareOnScreen -> View -> Picture
+renderCell cell ((x,y),(w,h)) view = let
+		aliveColor = red
+		deadColor = blue
+		path = [(x,y),(x,y+h),(x+w,y+h),(x+w,y)]
+		cellHeight = fieldHeightOnScreen
+	in case cell of
+	Cell Dead -> Color deadColor $ Line path
+	Cell Alive -> Color aliveColor $ Polygon path -- TO DO: render cell
+
 
 eventHandler :: Event -> World -> World
 eventHandler event = id -- TO DO: handle events
