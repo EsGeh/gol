@@ -3,6 +3,7 @@
 module Matrix(
 	-- * Types
 	Matrix(),
+	mapWithIndex,
 	MatrIndex,IndexRow,IndexCol,Width,Height,
 	-- * Matrix Pseudo Constructors
 	m,mSqr,
@@ -55,6 +56,12 @@ instance Functor Matrix where
 instance Foldable Matrix where
 	foldMap toMonoid (M l) = foldMap (foldMap toMonoid) l
 
+-- |fmap allows to map a function over a 'Foldable'
+-- but the function does not know the position of the element it is applied on.
+-- 'mapWithIndex' solves this problem
+mapWithIndex :: (MatrIndex -> a -> b) -> Matrix a -> Matrix b
+mapWithIndex f mat = mUnsafe $
+	[ [ (f (indexRow,indexCol) (mGet (indexRow,indexCol) mat)) | indexCol <- (mGetAllIndexCol mat) ] | indexRow <- (mGetAllIndexRow mat)]
 
 -- |creates a matrix from a list of lines. The result is packed into Maybe, because the input might be invalid
 m :: [[t]] -> Maybe (Matrix t)
@@ -90,8 +97,12 @@ mGet index (M listLines) = (listLines ! row) ! col
 		row = fst index; col = snd index
 
 -- |returns an element, packed in the 'WithOriginMatr' Monad
-mGetWithOrigin :: MatrIndex -> Matrix t -> LogOrigin t
-mGetWithOrigin index matr = do
+mGetWithOrigin :: MatrIndex -> Matrix t -> (t,MatrIndex)
+mGetWithOrigin index matr = (mGet index matr, index)
+
+-- |returns an element, packed in the 'WithOriginMatr' Monad
+mGetWithLog :: MatrIndex -> Matrix t -> LogOrigin t
+mGetWithLog index matr = do
 	tell $ Log [(ValO index)]
 	return $ val
 		where val = mGet index matr

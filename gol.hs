@@ -3,6 +3,7 @@ module Main where
 import GameData 
 import Matrix
 import Prelude hiding(Left,Right)
+import qualified Data.Foldable as F
 --import qualified GameData as GD
 
 
@@ -52,8 +53,29 @@ startWorld = World {
 }
 
 renderWorld :: World -> Picture
-renderWorld world = Blank
-	
+renderWorld world = Pictures $ foldToPictureList $ createPictureMatrix field
+	where
+		field = wField world
+		foldToPictureList :: Matrix Picture -> [Picture]
+		foldToPictureList matrOfPictures = F.foldr (:) [] matrOfPictures
+		createPictureMatrix field' = mapWithIndex (renderCell' field') field'
+			where
+				renderCell' field pos val = renderCell val pos (viewFromPos field pos)
+
+
+-- renders one single cell at a specific position on the field
+-- gets a "view" from that position as well.
+renderCell :: Cell -> PointOnField -> View -> Picture
+renderCell cell position view = case cell of
+	Cell Dead -> Blank
+	Cell Alive -> Blank -- TO DO: render cell
+
+eventHandler :: Event -> World -> World
+eventHandler event = id -- TO DO: handle events
+
+moveWorld :: DeltaT -> World -> World
+moveWorld deltaT = id -- TO DO: calculate world
+
 
 -- creates a "view" from a position on the field
 viewFromPos :: Field -> PointOnField -> View
@@ -72,16 +94,3 @@ moveIndex field (x,y) dir = case dir of
 		niceMod val m = case signum val of
 			(-1) -> niceMod (val+m) m
 			(1) -> val `mod` m
-
--- renders one single cell at a specific position on the field
--- gets a "view" from that position as well.
-renderCell :: Cell -> Point -> View -> Picture
-renderCell cell position view = case cell of
-	Cell Dead -> Blank
-	Cell Alive -> Blank -- TO DO: render cell
-
-eventHandler :: Event -> World -> World
-eventHandler event = id -- TO DO: handle events
-
-moveWorld :: DeltaT -> World -> World
-moveWorld deltaT = id -- TO DO: calculate world
