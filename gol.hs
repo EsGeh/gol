@@ -52,7 +52,7 @@ startWorld = World {
 }
 
 renderWorld :: World -> Picture
-renderWorld world = Blank
+renderWorld world = Blank -- TO DO: use renderCell to render the whole field
 
 -- creates a "view" from a position on the field
 viewFromPos :: Field -> PointOnField -> View
@@ -77,10 +77,10 @@ moveIndex field (x,y) dir = case dir of
 renderCell :: Cell -> Point -> View -> Picture
 renderCell cell position view = case cell of
 	Cell Dead -> Blank
-	Cell Alive -> Blank
+	Cell Alive -> Blank -- TO DO: render cell
 
 eventHandler :: Event -> World -> World
-eventHandler event = id
+eventHandler event = id -- TO DO: handle events
 
 moveWorld :: DeltaT -> World -> World
-moveWorld deltaT = id
+moveWorld deltaT = id -- TO DO: calculate world
