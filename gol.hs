@@ -14,10 +14,20 @@ import qualified Graphics.Gloss.Interface.Pure.Game as G
 type Time = Float
 type DeltaT = Float
 
+-- the position on the field.
+-- it serves a index for the matrix representing it
 type PointOnField = MatrIndex -- (Int,Int)
+
+-- the following types represent things in screen coordinates (as opposed to positions on the Field!):
 type PointOnScreen = (Float,Float)
 type SizeOnScreen = (Float,Float)
 type SquareOnScreen = (PointOnScreen,SizeOnScreen)
+
+-- two values between 0..1
+-- describes the position on the field.
+-- 	(0,0) means left upper corner
+-- 	(1,1) means right bottom corner
+type FloatPosOnField = (Float,Float)
 
 data World = World {
 	wSettings :: Settings,
@@ -114,8 +124,13 @@ eventHandler :: Event -> World -> World
 eventHandler event world = case event of
 	EventKey (MouseButton button) G.Down _ (x,y) ->
 		world {
-			wField = mSet (screenPosToFieldPos (x,y)) (Cell Alive) $ (wField world)
+			wField = mSet fieldPos (Cell Alive) $ field 
 		}
+			where
+				field = wField world
+				fieldPos = ( floor $ x' * (fromIntegral fieldW),  floor $ y' * (fromIntegral fieldH))
+				(x',y') = screenPosToFieldPos (x,y)
+				(fieldW, fieldH) = (mGetWidth field, mGetHeight field)
 	otherwise -> world
 
 moveWorld :: DeltaT -> World -> World
@@ -143,8 +158,9 @@ moveIndex field (x,y) dir = case dir of
 			(-1) -> niceMod (val+m) m
 			(1) -> val `mod` m
 
-screenPosToFieldPos :: PointOnScreen -> PointOnField
+
+screenPosToFieldPos :: PointOnScreen -> FloatPosOnField
 screenPosToFieldPos screenPos = divideByBoardSize $ mathToScreenCoords screenPos
 	where
-		divideByBoardSize (x,y) = ( floor $ x/fieldWidthOnScreen, floor $ y/fieldHeightOnScreen )
-		mathToScreenCoords (x,y) = (x - fieldWidthOnScreen/2, -y + fieldHeightOnScreen/2)
+		divideByBoardSize (x,y) = ( x/fieldWidthOnScreen, y/fieldHeightOnScreen )
+		mathToScreenCoords (x,y) = (x + fieldWidthOnScreen/2, -y + fieldHeightOnScreen/2)
