@@ -77,7 +77,7 @@ data DisplaySettings = DisplaySettings {
 -- some important settings:
 ----------------------------------------------------------------------------------
 
-disp = InWindow "GAME OF LIFE!!!" (windowPos dispSettings) (windowSize dispSettings)
+disp = InWindow "GAME OF LIFE!!!" (windowSize dispSettings) (windowPos dispSettings)
 bgColor = black
 
 framerate :: Int
@@ -92,9 +92,9 @@ startWorld = World {
 
 dispSettings = DisplaySettings {
 	windowPos = (100,100),
-	windowSize = (800,600),
+	windowSize = (1440,900),
 
-	fieldPos = (0,0),
+	fieldPos = (10,10),
 	fieldSize = (400,300)
 }
 
@@ -121,22 +121,22 @@ main = do
 -- uses "renderBg" and "renderField"
 renderWorld :: World -> Picture
 renderWorld world =
+	(uncurry Translate) (screenCoordsToMath (0,0)) $
 	Scale 1 (-1) $	-- flip y axis
-	Translate ( -(fromIntegral $ sizeWidth $ windowSize dispSettings)/2) (-(fromIntegral $ sizeHeight $ windowSize dispSettings)/2) $ -- shift the picture, so that it begins in the upper left corner
+	--Translate ( -(fromIntegral $ sizeWidth $ windowSize dispSettings)/2) (-(fromIntegral $ sizeHeight $ windowSize dispSettings)/2) $ -- shift the picture, so that it begins in the upper left corner
 	Pictures [ renderBg, renderField (vecIToF $ fieldPos dispSettings, vecIToF $ fieldSize dispSettings) world]
 
 -- render the background:
 renderBg = Color white $ Polygon path
 	where
-		path = [
-			(fieldXOnScreen, fieldYOnScreen),
-			(fieldXOnScreen+fieldWidthOnScreen, fieldYOnScreen),
-			(fieldXOnScreen+fieldWidthOnScreen, fieldYOnScreen + fieldHeightOnScreen),
-			(fieldXOnScreen, fieldYOnScreen + fieldHeightOnScreen),
-			(fieldXOnScreen, fieldYOnScreen)
+		path = map vecIToF [
+			fieldPos dispSettings,
+			fieldPos dispSettings <+> (sizeWidth $ fieldSize', 0),
+			fieldPos dispSettings <+> fieldSize',
+			fieldPos dispSettings <+> (0, sizeHeight $ fieldSize'),
+			fieldPos dispSettings
 			]
-		(fieldXOnScreen, fieldYOnScreen) = vecIToF $ fieldPos dispSettings
-		(fieldWidthOnScreen, fieldHeightOnScreen) = vecIToF $ fieldSize dispSettings
+		fieldSize' = fieldSize dispSettings
 
 -- render the field using renderCell:
 renderField :: SquareOnScreen -> World -> Picture
@@ -153,11 +153,10 @@ renderField square world = Pictures $ foldToPictureList $ createPictureMatrix fi
 			where
 				renderCell' field'' pos val = renderCell val (squareOnScreenFromPosOnField pos) (viewFromPos field'' pos)
 				squareOnScreenFromPosOnField :: PointOnField -> SquareOnScreen
-				squareOnScreenFromPosOnField (x,y) = ( (x'*w,y'*h), (w,h))
+				squareOnScreenFromPosOnField fieldPos = ( posBase <+> (vecIToF fieldPos) <*> size, size)
 					where
-						(x',y') = vecIToF (x, y)
-				w = (fromIntegral $ sizeWidth $ fieldSize dispSettings) / (fromIntegral $ mGetWidth field)
-				h = (fromIntegral $ sizeHeight $ fieldSize dispSettings) / (fromIntegral $ mGetHeight field)
+						posBase = pointFromSquare square
+						size = (sizeFromSquare square) </> (vecIToF $ (mGetWidth field, mGetHeight field))
 
 -- renders one single cell at a specific position on the field
 -- gets a "view" from that position as well.
@@ -166,7 +165,6 @@ renderCell cell ((x,y),(w,h)) view = let
 		aliveColor = red
 		deadColor = blue
 		path = [(x,y),(x,y+h),(x+w,y+h),(x+w,y)]
-		--cellHeight = fieldHeightOnScreen
 	in case cell of
 	Cell Dead -> Color deadColor $ Line path
 	Cell Alive -> Color aliveColor $ Polygon path -- TO DO: render cell
@@ -220,5 +218,8 @@ screenPosToFieldPos screenPos = divideByBoardSize $ mathToScreenCoords screenPos
 	where
 		divideByBoardSize point = point </> (vecIToF $ fieldSize dispSettings)
 
+screenCoordsToMath :: PointOnScreen -> PointOnScreen
+screenCoordsToMath screenPos = (screenPos <-> ( vecIToF $ windowSize dispSettings) </ 2 ) <*> (1,-1)
+
 mathToScreenCoords :: PointOnScreen -> PointOnScreen
-mathToScreenCoords screenPos = (screenPos <*> (1,-1)) + (vecIToF $ windowSize dispSettings) </ 2
+mathToScreenCoords screenPos = (screenPos <*> (1,-1)) <+> (vecIToF $ windowSize dispSettings) </ 2
