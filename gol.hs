@@ -14,14 +14,21 @@ import qualified Graphics.Gloss.Interface.Pure.Game as G
 type Time = Float
 type DeltaT = Float
 
+type Vec a = (a,a)
+
 -- the position on the field.
 -- it serves a index for the matrix representing it
 type PointOnField = MatrIndex -- (Int,Int)
 
 -- the following types represent things in screen coordinates (as opposed to positions on the Field!):
-type PointOnScreen = (Float,Float)
-type SizeOnScreen = (Float,Float)
+type PointOnScreen = Vec Float -- (Float,Float)
+type SizeOnScreen = Vec Float -- (Float,Float)
 type SquareOnScreen = (PointOnScreen,SizeOnScreen)
+
+sizeFromSquare :: SquareOnScreen -> SizeOnScreen
+sizeFromSquare (pos,size) = size
+pointFromSquare :: SquareOnScreen -> PointOnScreen
+pointFromSquare (pos,size) = pos
 
 -- two values between 0..1
 -- describes the position on the field.
@@ -29,19 +36,40 @@ type SquareOnScreen = (PointOnScreen,SizeOnScreen)
 -- 	(1,1) means right bottom corner
 type FloatPosOnField = (Float,Float)
 
--- some useful functions for working with points:
-pointX :: (a, a) -> a
-pointX (x,y) = x
-pointY :: (a, a) -> a
-pointY (x,y) = y 
-sizeWidth :: (a,a) -> a
-sizeWidth (w,h) = w
-sizeHeight :: (a,a) -> a
-sizeHeight (w,h) = h
-vecFToI :: (Float,Float) -> (Int,Int)
+-- some useful functions for working with vectors:
+vecX :: Vec a -> a
+vecX (x,y) = x
+vecY :: Vec a -> a
+vecY (x,y) = y
+
+vecFToI :: Vec Float -> Vec Int
 vecFToI (x,y) = (floor x, floor y)
-vecIToF :: (Int, Int) -> (Float, Float)
+vecIToF :: Vec Int -> Vec Float
 vecIToF (x,y) = (fromIntegral x, fromIntegral y)
+
+-- aliases for vector functions, to make clear if they operate on a position or a size
+pointX = vecX
+pointY = vecY
+sizeWidth = vecX
+sizeHeight = vecY
+
+infix 8 <+> -- vector addition
+infix 8 <-> -- vector subtraction
+infix 9 <*> -- component-by-component multiplication (!)
+infix 9 </> -- component-by-component division (!)
+infix 9 *> -- scalar mult
+infix 9 <* -- scalar mult
+infix 9 /> -- scalar div
+infix 9 </ -- scalar div
+--(:+:) :: (Num a) => Vec a -> Vec a -> Vec a
+l <+> r = (pointX l + pointX r,  pointY l + pointY r)
+l <-> r = (pointX l - pointX r,  pointY l - pointY r)
+l <*> r = (pointX l * pointX r,  pointY l * pointY r)
+l </> r = (pointX l / pointX r,  pointY l / pointY r)
+scalar *> vec = (scalar * (pointX vec), scalar * (pointY vec))
+(<*) = flip (*>)
+scalar /> vec = (scalar / (pointX vec), scalar / (pointY vec))
+vec </ scalar = ((pointX vec) / scalar, (pointY vec) / scalar)
 
 data World = World {
 	wSettings :: Settings,
@@ -117,8 +145,8 @@ main = do
 renderWorld :: World -> Picture
 renderWorld world =
 	Scale 1 (-1) $	-- flip y axis
-	Translate ( -(fromIntegral $ sizeWidth $ fieldSize dispSettings)/2) (-(fromIntegral $ sizeHeight $ fieldSize dispSettings)/2) $ -- shift the picture, so that it begins in the upper left corner
-	Pictures [ renderBg, renderField world]
+	Translate ( -(fromIntegral $ sizeWidth $ windowSize dispSettings)/2) (-(fromIntegral $ sizeHeight $ windowSize dispSettings)/2) $ -- shift the picture, so that it begins in the upper left corner
+	Pictures [ renderBg, renderField (vecIToF $ fieldPos dispSettings, vecIToF $ fieldSize dispSettings) world]
 
 -- render the background:
 renderBg = Color white $ Polygon path
@@ -134,7 +162,8 @@ renderBg = Color white $ Polygon path
 		(fieldWidthOnScreen, fieldHeightOnScreen) = vecIToF $ fieldSize dispSettings
 
 -- render the field using renderCell:
-renderField world = Pictures $ foldToPictureList $ createPictureMatrix field
+renderField :: SquareOnScreen -> World -> Picture
+renderField square world = Pictures $ foldToPictureList $ createPictureMatrix field
 	where
 		field :: Field -- remember "Field" is defined as "Matrix Cell"
 		field = wField world
@@ -208,9 +237,11 @@ moveIndex field (x,y) dir = case dir of
 			(1) -> val `mod` m
 
 -- takes a position on the screen (e.g. mouse pointer) and calculates a position on the field (0..1, 0..1)
+
 screenPosToFieldPos :: PointOnScreen -> FloatPosOnField
 screenPosToFieldPos screenPos = divideByBoardSize $ mathToScreenCoords screenPos
 	where
-		divideByBoardSize (x,y) = ( x/fieldWidthOnScreen, y/fieldHeightOnScreen )
-		mathToScreenCoords (x,y) = (x + fieldWidthOnScreen/2, -y + fieldHeightOnScreen/2)
-		(fieldWidthOnScreen,fieldHeightOnScreen) = vecIToF $ (sizeWidth $ fieldSize dispSettings, sizeHeight $ fieldSize dispSettings)
+		divideByBoardSize point = point </> (vecIToF $ fieldSize dispSettings)
+
+mathToScreenCoords :: PointOnScreen -> PointOnScreen
+mathToScreenCoords screenPos = (screenPos <*> (1,-1)) + (vecIToF $ windowSize dispSettings) </ 2
