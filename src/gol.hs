@@ -1,6 +1,7 @@
 module Main where
 
 import GameData 
+import Rules
 import Matrix
 import Vector2D
 import Prelude hiding(Left,Right)
@@ -81,7 +82,7 @@ disp = InWindow "GAME OF LIFE!!!" (windowSize dispSettings) (windowPos dispSetti
 bgColor = black
 
 framerate :: Int
-framerate = 40
+framerate = 1
 
 
 startWorld :: World
@@ -186,7 +187,17 @@ eventHandler event world = case event of
 
 -- update world
 moveWorld :: DeltaT -> World -> World
-moveWorld deltaT = id -- TO DO: calculate world
+moveWorld deltaT oldWorld@World{ wField=oldField } = oldWorld { wField=newField oldField}
+	where
+		newField oldField = mapWithIndex (moveCell oldField) oldField
+			where
+				moveCell :: Field -> MatrIndex -> Cell -> Cell
+				moveCell field index (Cell status) = Cell $ judge status livingNeighboursCount
+					where
+						livingNeighboursCount = sum $ map (numFromStatus . viewFromPos field index) [Up,Down,Left,Right]
+						numFromStatus s = case s of
+							(Cell Alive) -> 1
+							(Cell Dead) -> 0
 
 
 ----------------------------------------------------------------------------------
@@ -210,6 +221,8 @@ moveIndex field (x,y) dir = case dir of
 		niceMod val m = case signum val of
 			(-1) -> niceMod (val+m) m
 			(1) -> val `mod` m
+			(0) -> 0
+			otherwise -> error "niceMod internal error!"
 
 -- takes a position on the screen (e.g. mouse pointer) and calculates a position on the field (0..1, 0..1)
 screenPosToFieldPos :: PointOnScreen -> FloatPosOnField
