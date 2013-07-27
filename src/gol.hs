@@ -2,6 +2,7 @@ module Main where
 
 import GameData 
 import Matrix
+import Vector2D
 import Prelude hiding(Left,Right)
 import qualified Data.Foldable as F
 --import qualified GameData as GD
@@ -14,7 +15,6 @@ import qualified Graphics.Gloss.Interface.Pure.Game as G
 type Time = Float
 type DeltaT = Float
 
-type Vec a = (a,a)
 
 -- the position on the field.
 -- it serves a index for the matrix representing it
@@ -36,12 +36,6 @@ pointFromSquare (pos,size) = pos
 -- 	(1,1) means right bottom corner
 type FloatPosOnField = (Float,Float)
 
--- some useful functions for working with vectors:
-vecX :: Vec a -> a
-vecX (x,y) = x
-vecY :: Vec a -> a
-vecY (x,y) = y
-
 vecFToI :: Vec Float -> Vec Int
 vecFToI (x,y) = (floor x, floor y)
 vecIToF :: Vec Int -> Vec Float
@@ -53,23 +47,6 @@ pointY = vecY
 sizeWidth = vecX
 sizeHeight = vecY
 
-infix 8 <+> -- vector addition
-infix 8 <-> -- vector subtraction
-infix 9 <*> -- component-by-component multiplication (!)
-infix 9 </> -- component-by-component division (!)
-infix 9 *> -- scalar mult
-infix 9 <* -- scalar mult
-infix 9 /> -- scalar div
-infix 9 </ -- scalar div
---(:+:) :: (Num a) => Vec a -> Vec a -> Vec a
-l <+> r = (pointX l + pointX r,  pointY l + pointY r)
-l <-> r = (pointX l - pointX r,  pointY l - pointY r)
-l <*> r = (pointX l * pointX r,  pointY l * pointY r)
-l </> r = (pointX l / pointX r,  pointY l / pointY r)
-scalar *> vec = (scalar * (pointX vec), scalar * (pointY vec))
-(<*) = flip (*>)
-scalar /> vec = (scalar / (pointX vec), scalar / (pointY vec))
-vec </ scalar = ((pointX vec) / scalar, (pointY vec) / scalar)
 
 data World = World {
 	wSettings :: Settings,
