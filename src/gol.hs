@@ -212,9 +212,8 @@ moveIndex field (x,y) dir = case dir of
 			(1) -> val `mod` m
 
 -- takes a position on the screen (e.g. mouse pointer) and calculates a position on the field (0..1, 0..1)
-
 screenPosToFieldPos :: PointOnScreen -> FloatPosOnField
-screenPosToFieldPos screenPos = divideByBoardSize $ mathToScreenCoords screenPos
+screenPosToFieldPos screenPos = divideByBoardSize $ mathToScreenCoords screenPos <-> (vecIToF $ fieldPos dispSettings)
 	where
 		divideByBoardSize point = point </> (vecIToF $ fieldSize dispSettings)
 
