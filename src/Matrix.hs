@@ -1,5 +1,5 @@
 -- | This module exports a matrix type as well as some functions to work with it
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, DeriveTraversable #-}
 module Matrix(
 	-- * Types
 	Matrix(),
@@ -26,6 +26,8 @@ import qualified PrettyShow as Pretty
 
 import Data.Foldable hiding(concat,toList)
 import Data.Foldable as Fold hiding(concat,toList)
+import Control.Applicative
+import Data.Traversable
 import Data.List hiding(foldl,foldr)
 --import qualified Data.List as List
 import Prelude hiding(foldl,foldr,Left,Right)
@@ -37,6 +39,7 @@ import Data.Array
 
 -- |a matrix:
 data Matrix t = M (Array Int (Array Int t))
+	deriving(Traversable)
 -- |index to access elements in a matrix
 type MatrIndex = (IndexRow,IndexCol)
 type IndexRow = Int
@@ -57,6 +60,16 @@ instance Functor Matrix where
 	fmap f (M listLines) = M $ fmap (fmap f) listLines
 instance Foldable Matrix where
 	foldMap toMonoid (M l) = foldMap (foldMap toMonoid) l
+{-instance Traversable Matrix where
+	--traverse :: Applicative f => (a -> f b) -> Matrix a -> f (Matrix b)
+	traverse f (M listLines) = traverse (mUnsafe . traverse f) listLines
+	-}
+instance Applicative Matrix where
+	--pure :: a -> Matrix a
+	pure val = mUnsafe [[ val ]]
+	--(<*>) :: Matrix (a->b) -> Matrix a -> Matrix b
+	matrF <*> matrVal = mUnsafe $
+		[ [ (mGet (indexRow,indexCol) matrF $ (mGet (indexRow,indexCol) matrVal)) | indexCol <- (mGetAllIndexCol matrVal) ] | indexRow <- (mGetAllIndexRow matrVal)]
 
 -- |fmap allows to map a function over a 'Foldable'
 -- but the function does not know the position of the element it is applied on.

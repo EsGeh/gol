@@ -88,15 +88,15 @@ framerate = 1
 startWorld :: World
 startWorld = World {
 	wSettings = Settings,
-	wField = field 3 3
+	wField = randomField 50 50 0
 }
 
 dispSettings = DisplaySettings {
 	windowPos = (100,100),
-	windowSize = (1440,900),
+	windowSize = (800,600),
 
 	fieldPos = (10,10),
-	fieldSize = (400,300)
+	fieldSize = (800,600)
 }
 
 
