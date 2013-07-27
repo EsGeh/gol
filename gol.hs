@@ -113,6 +113,7 @@ main = do
 -- functions
 ----------------------------------------------------------------------------------
 
+-- uses "renderBg" and "renderField"
 renderWorld :: World -> Picture
 renderWorld world =
 	Scale 1 (-1) $	-- flip y axis
@@ -135,16 +136,20 @@ renderBg = Color white $ Polygon path
 -- render the field using renderCell:
 renderField world = Pictures $ foldToPictureList $ createPictureMatrix field
 	where
+		field :: Field -- remember "Field" is defined as "Matrix Cell"
 		field = wField world
+
 		foldToPictureList :: Matrix Picture -> [Picture]
 		foldToPictureList matrOfPictures = F.foldr (:) [] matrOfPictures
+
+		createPictureMatrix :: Matrix Cell -> Matrix Picture
 		createPictureMatrix field' = mapWithIndex (renderCell' field') field'
 			where
 				renderCell' field'' pos val = renderCell val (squareOnScreenFromPosOnField pos) (viewFromPos field'' pos)
 				squareOnScreenFromPosOnField :: PointOnField -> SquareOnScreen
 				squareOnScreenFromPosOnField (x,y) = ( (x'*w,y'*h), (w,h))
 					where
-						(x',y') = (fromIntegral x, fromIntegral y)
+						(x',y') = vecIToF (x, y)
 				w = (fromIntegral $ sizeWidth $ fieldSize dispSettings) / (fromIntegral $ mGetWidth field)
 				h = (fromIntegral $ sizeHeight $ fieldSize dispSettings) / (fromIntegral $ mGetHeight field)
 
@@ -164,6 +169,7 @@ renderCell cell ((x,y),(w,h)) view = let
 eventHandler :: Event -> World -> World
 eventHandler event world = case event of
 	EventKey (MouseButton button) G.Down _ (x,y) ->
+		-- set one cell to "Alive":
 		world {
 			wField = mSet fieldPos (Cell Alive) $ field 
 		}
@@ -174,6 +180,7 @@ eventHandler event world = case event of
 				(fieldW, fieldH) = (mGetWidth field, mGetHeight field)
 	otherwise -> world
 
+-- update world
 moveWorld :: DeltaT -> World -> World
 moveWorld deltaT = id -- TO DO: calculate world
 
