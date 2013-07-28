@@ -100,7 +100,7 @@ dispSettings = DisplaySettings {
 	windowSize = (800,600),
 
 	fieldPos = (10,10),
-	fieldSize = (800,600)
+	fieldSize = (600,600)
 }
 
 
@@ -179,7 +179,7 @@ eventHandler :: Event -> World -> World
 eventHandler event world = case event of
 	EventKey (SpecialKey KeySpace) G.Down _ _ ->
 		-- trigger pause:
-		world{ wSettings=settingsOld{ paused = True } } where settingsOld = wSettings world
+		world{ wSettings=settingsOld{ paused = not $ paused $ settingsOld} } where settingsOld = wSettings world
 	EventKey (MouseButton button) G.Down _ (x,y) ->
 		-- set one cell to "Alive":
 		world {
@@ -196,15 +196,17 @@ eventHandler event world = case event of
 moveWorld :: DeltaT -> World -> World
 moveWorld deltaT oldWorld@World{ wField=oldField } = oldWorld { wField=newField oldField}
 	where
-		newField oldField = mapWithIndex (moveCell oldField) oldField
-			where
-				moveCell :: Field -> MatrIndex -> Cell -> Cell
-				moveCell field index (Cell status) = Cell $ judge status livingNeighboursCount
-					where
-						livingNeighboursCount = sum $ map (numFromStatus . viewFromPos field index) [Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft]
-						numFromStatus s = case s of
-							(Cell Alive) -> 1
-							(Cell Dead) -> 0
+		newField oldField = case (paused $ wSettings $ oldWorld) of
+			True -> oldField
+			False -> mapWithIndex (moveCell oldField) oldField
+				where
+					moveCell :: Field -> MatrIndex -> Cell -> Cell
+					moveCell field index (Cell status) = Cell $ judge status livingNeighboursCount
+						where
+							livingNeighboursCount = sum $ map (numFromStatus . viewFromPos field index) [Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft]
+							numFromStatus s = case s of
+								(Cell Alive) -> 1
+								(Cell Dead) -> 0
 
 
 ----------------------------------------------------------------------------------
