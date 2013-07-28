@@ -177,6 +177,9 @@ renderCell cell ((x,y),(w,h)) view = let
 
 eventHandler :: Event -> World -> World
 eventHandler event world = case event of
+	EventKey (SpecialKey KeySpace) G.Down _ _ ->
+		-- trigger pause:
+		world{ wSettings=settingsOld{ paused = True } } where settingsOld = wSettings world
 	EventKey (MouseButton button) G.Down _ (x,y) ->
 		-- set one cell to "Alive":
 		world {
