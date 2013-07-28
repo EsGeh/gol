@@ -3,14 +3,16 @@
 module Matrix(
 	-- * Types
 	Matrix(),
-	mapWithIndex,
+	-- ** type aliases for indexes and width or height
 	MatrIndex,IndexRow,IndexCol,Width,Height,
 	-- * Matrix Pseudo Constructors
-	m,mSqr,
+	m,mUnsafe,mSqr,
 	-- * Getter
 	mGet,mGetHeight,mGetWidth,
 	-- * Setter
 	mSet,
+	-- * enhanced mapping
+	mapWithIndex,
 	-- ** Monadic Getters
 	mGetWithOrigin,
 	-- ** Lists of Indices
@@ -37,9 +39,9 @@ import Control.Monad.Writer
 import Data.Ratio
 import Data.Array
 
--- |a matrix:
+-- |a matrix. The constructor is hidden, so it cannot be used directly - use 'm' or 'mUnsafe' instead
 data Matrix t = M (Array Int (Array Int t))
-	deriving(Traversable)
+	deriving(Traversable) -- don't know how to implement that, so I am using the "deriving" clause, ...
 -- |index to access elements in a matrix
 type MatrIndex = (IndexRow,IndexCol)
 type IndexRow = Int
@@ -50,20 +52,24 @@ type Height = Int
 ---------------------------------------------------------------------------------------
 -- instance declarations: -------------------------------------------------------------
 ---------------------------------------------------------------------------------------
+-- | show the matrix in a nice table like representation
 instance (Show t) => Show (Matrix t) where
 	show m@(M listLines) = 
 		concat $ intersperse "\n" $ elems $ fmap (prettyShow " | " ((fromIntegral maxLength)%1) 0 ) $ listLines
 			where
 				maxLength = Fold.maximum $ fmap (length . show) m
 				prettyShow = Pretty.showContainer "" "" " " " " Pretty.LeftJust
+-- |enables mapping a function over every element in the matrix
 instance Functor Matrix where
 	fmap f (M listLines) = M $ fmap (fmap f) listLines
+-- |enables to fold a matrix into a single value
 instance Foldable Matrix where
 	foldMap toMonoid (M l) = foldMap (foldMap toMonoid) l
 {-instance Traversable Matrix where
 	--traverse :: Applicative f => (a -> f b) -> Matrix a -> f (Matrix b)
 	traverse f (M listLines) = traverse (mUnsafe . traverse f) listLines
 	-}
+-- |a matix of functions can be applied on a matrix of values
 instance Applicative Matrix where
 	--pure :: a -> Matrix a
 	pure val = mUnsafe [[ val ]]
