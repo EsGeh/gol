@@ -57,7 +57,7 @@ data World = World {
 data Settings = Settings
 
 -- direction for movements or "pointers" on the field
-data Direction = Up | Down | Left | Right
+data Direction = Up | UpRight | Right | DownRight | Down | DownLeft | Left | UpLeft 
 
 -- this is what the render function gets so that it knows about the
 -- neighbour cells:
@@ -194,7 +194,7 @@ moveWorld deltaT oldWorld@World{ wField=oldField } = oldWorld { wField=newField 
 				moveCell :: Field -> MatrIndex -> Cell -> Cell
 				moveCell field index (Cell status) = Cell $ judge status livingNeighboursCount
 					where
-						livingNeighboursCount = sum $ map (numFromStatus . viewFromPos field index) [Up,Down,Left,Right]
+						livingNeighboursCount = sum $ map (numFromStatus . viewFromPos field index) [Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft]
 						numFromStatus s = case s of
 							(Cell Alive) -> 1
 							(Cell Dead) -> 0
@@ -206,15 +206,19 @@ moveWorld deltaT oldWorld@World{ wField=oldField } = oldWorld { wField=newField 
 
 -- creates a "view" from a position on the field
 viewFromPos :: Field -> PointOnField -> View
-viewFromPos field pos dir = mGet (moveIndex field pos dir) field 
+viewFromPos field pos dir = mGet (getNeighbourIndex field pos dir) field 
 
 -- realizes a "torus like" behavior for positions on the field
-moveIndex :: Field -> PointOnField -> Direction -> PointOnField
-moveIndex field (x,y) dir = case dir of
+getNeighbourIndex :: Field -> PointOnField -> Direction -> PointOnField
+getNeighbourIndex field pos@(x,y) dir = case dir of
 	Up -> (x,(y-1) `niceMod` height)
-	Down -> (x,(y+1) `niceMod` height)
-	Left -> ((x-1) `niceMod` width, y)
+	UpRight -> getNeighbourIndex field (getNeighbourIndex field pos Up) Right
 	Right -> ((x+1) `niceMod` width, y)
+	DownRight -> getNeighbourIndex field (getNeighbourIndex field pos Down) Right
+	Down -> (x,(y+1) `niceMod` height)
+	DownLeft -> getNeighbourIndex field (getNeighbourIndex field pos Down) Left
+	Left -> ((x-1) `niceMod` width, y)
+	UpLeft -> getNeighbourIndex field (getNeighbourIndex field pos Up) Left
 	where
 		width = mGetWidth field
 		height = mGetHeight field
