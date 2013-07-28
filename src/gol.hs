@@ -17,10 +17,6 @@ type Time = Float
 type DeltaT = Float
 
 
--- the position on the field.
--- it serves a index for the matrix representing it
-type PointOnField = MatrIndex -- (Int,Int)
-
 -- the following types represent things in screen coordinates (as opposed to positions on the Field!):
 type PointOnScreen = Vec Float -- (Float,Float)
 type SizeOnScreen = Vec Float -- (Float,Float)
