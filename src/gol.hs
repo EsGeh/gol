@@ -54,7 +54,11 @@ data World = World {
 	wField :: Field 
 }
 
-data Settings = Settings
+data Settings = Settings {
+	paused :: Bool,
+	mouseButtonPressed :: Bool
+}
+settingsStart = Settings False False
 
 -- direction for movements or "pointers" on the field
 data Direction = Up | Down | Left | Right
@@ -87,7 +91,7 @@ framerate = 1
 
 startWorld :: World
 startWorld = World {
-	wSettings = Settings,
+	wSettings = settingsStart,
 	wField = randomField 50 50 0
 }
 
