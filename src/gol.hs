@@ -176,20 +176,29 @@ renderCell cell ((x,y),(w,h)) view = let
 
 
 eventHandler :: Event -> World -> World
-eventHandler event world = case event of
+eventHandler event world@World{ wSettings=settingsOld } = case event of
 	EventKey (SpecialKey KeySpace) G.Down _ _ ->
 		-- trigger pause:
-		world{ wSettings=settingsOld{ paused = not $ paused $ settingsOld} } where settingsOld = wSettings world
-	EventKey (MouseButton button) G.Down _ (x,y) ->
+		world{ wSettings=settingsOld{ paused = not $ paused $ settingsOld} } --where settingsOld = wSettings world
+	EventKey (MouseButton button) downUp _ (x,y) -> 
+		let settingsOld = wSettings world
+		in case downUp of
+			G.Down -> callMouseMoveOnce $ world{ wSettings=settingsOld{ mouseButtonPressed=True } }
+				where callMouseMoveOnce world = eventHandler (EventMotion (x,y)) world
+			G.Up -> world{ wSettings=settingsOld{ mouseButtonPressed=False } }
+	EventMotion (x,y) -> case mouseButtonPressed settingsOld of
+		False -> world
+		True ->
+	--EventKey (MouseButton button) G.Down _ (x,y) ->
 		-- set one cell to "Alive":
-		world {
-			wField = mSet fieldPos (Cell Alive) $ field 
-		}
-			where
-				field = wField world
-				fieldPos = ( floor $ x' * (fromIntegral fieldW),  floor $ y' * (fromIntegral fieldH))
-				(x',y') = screenPosToFieldPos (x,y)
-				(fieldW, fieldH) = (mGetWidth field, mGetHeight field)
+			world {
+				wField = mSet fieldPos (Cell Alive) $ field 
+			}
+				where
+					field = wField world
+					fieldPos = ( floor $ x' * (fromIntegral fieldW),  floor $ y' * (fromIntegral fieldH))
+					(x',y') = screenPosToFieldPos (x,y)
+					(fieldW, fieldH) = (mGetWidth field, mGetHeight field)
 	otherwise -> world
 
 -- update world
