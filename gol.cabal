@@ -10,6 +10,6 @@ data-dir: ""
 
 executable gol
     build-depends: QuickCheck -any, base -any, gloss -any, array, mtl, random
-    main-is: Gol.hs
+    main-is: gol.hs
     buildable: True
     hs-source-dirs: src
