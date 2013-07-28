@@ -132,7 +132,7 @@ renderWorld world =
 	Pictures [ renderBg, renderField (vecIToF $ fieldPos dispSettings, vecIToF $ fieldSize dispSettings) world]
 
 -- render the background:
-renderBg = Color white $ Polygon path
+renderBg = Color black $ Polygon path
 	where
 		path = map vecIToF [
 			fieldPos dispSettings,
@@ -168,7 +168,7 @@ renderField square world = Pictures $ foldToPictureList $ createPictureMatrix fi
 renderCell :: Cell -> SquareOnScreen -> View -> Picture
 renderCell cell ((x,y),(w,h)) view = let
 		aliveColor = red
-		deadColor = blue
+		deadColor = blue --mixColors 0.0 1.0 blue black
 		path = [(x,y),(x,y+h),(x+w,y+h),(x+w,y)]
 	in case cell of
 	Cell Dead -> Color deadColor $ Line path
@@ -189,8 +189,7 @@ eventHandler event world@World{ wSettings=settingsOld } = case event of
 	EventMotion (x,y) -> case mouseButtonPressed settingsOld of
 		False -> world
 		True ->
-	--EventKey (MouseButton button) G.Down _ (x,y) ->
-		-- set one cell to "Alive":
+			-- set one cell to "Alive":
 			world {
 				wField = mSet fieldPos (Cell Alive) $ field 
 			}
