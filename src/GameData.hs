@@ -49,7 +49,7 @@ putField f1 f2 insertPoint = mapWithIndex (substitute f2 insertPoint) f1
 			False -> oldCell
 			where
 				isIndexIn_f2 = ix <= cx && cx <= ix + mGetWidth f2 && iy <= cy && cy <= iy + mGetWidth f2
-												
+
 
 randomField :: Int -> Int -> Int -> Matrix Cell --State StdGen Int
 randomField width height seed = fmap (Cell . fromBool) $ snd $ T.mapAccumL combine (mkStdGen seed) (fmap (const randomSt) $ field width height)

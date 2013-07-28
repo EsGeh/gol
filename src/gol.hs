@@ -7,6 +7,7 @@ import Vector2D
 import Prelude hiding(Left,Right)
 import qualified Data.Foldable as F
 --import qualified GameData as GD
+import System.Environment
 
 
 import Graphics.Gloss
@@ -85,10 +86,11 @@ framerate :: Int
 framerate = 1
 
 
-startWorld :: World
-startWorld = World {
+startWorld :: Int -> Int -> World
+startWorld xSize ySize = World {
 	wSettings = settingsStart,
-	wField = randomField 50 50 0
+	-- wField = randomField 50 50 0
+	wField = field xSize ySize
 }
 
 dispSettings = DisplaySettings {
@@ -105,11 +107,14 @@ dispSettings = DisplaySettings {
 ----------------------------------------------------------------------------------
 
 main = do
+	args <- getArgs
+	xSize <- return (read (args !! 0))
+	ySize <- return (read (args !! 1))
 	play
 		disp
 		bgColor
 		framerate
-		startWorld
+		(startWorld xSize ySize)
 		renderWorld
 		eventHandler
 		moveWorld
