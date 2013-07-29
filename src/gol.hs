@@ -203,6 +203,7 @@ eventHandler event world@World{ wSettings=settingsOld } = case event of
 
 -- update world
 moveWorld :: DeltaT -> World -> World
+--moveWorld dt = id
 moveWorld deltaT oldWorld@World{ wField=oldField } = oldWorld { wField=newField oldField}
 	where
 		newField oldField = case (paused $ wSettings $ oldWorld) of
@@ -210,8 +211,10 @@ moveWorld deltaT oldWorld@World{ wField=oldField } = oldWorld { wField=newField 
 			False -> mapWithIndex (moveCell oldField) oldField
 				where
 					moveCell :: Field -> MatrIndex -> Cell -> Cell
+					--moveCell f i = id
 					moveCell field index (Cell status) = Cell $ judge status livingNeighboursCount
 						where
+							--livingNeighboursCount = 8
 							livingNeighboursCount = sum $ map (numFromStatus . viewFromPos field index) [Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft]
 							numFromStatus s = case s of
 								(Cell Alive) -> 1
@@ -229,13 +232,13 @@ viewFromPos field pos dir = mGet (getNeighbourIndex field pos dir) field
 -- realizes a "torus like" behavior for positions on the field
 getNeighbourIndex :: Field -> PointOnField -> Direction -> PointOnField
 getNeighbourIndex field pos@(x,y) dir = case dir of
-	Up -> (x,(y-1) `niceMod` height)
+	Up -> (x,(y-1) `niceMod` width)
 	UpRight -> getNeighbourIndex field (getNeighbourIndex field pos Up) Right
-	Right -> ((x+1) `niceMod` width, y)
+	Right -> ((x+1) `niceMod` height, y)
 	DownRight -> getNeighbourIndex field (getNeighbourIndex field pos Down) Right
-	Down -> (x,(y+1) `niceMod` height)
+	Down -> (x,(y+1) `niceMod` width)
 	DownLeft -> getNeighbourIndex field (getNeighbourIndex field pos Down) Left
-	Left -> ((x-1) `niceMod` width, y)
+	Left -> ((x-1) `niceMod` height, y)
 	UpLeft -> getNeighbourIndex field (getNeighbourIndex field pos Up) Left
 	where
 		width = mGetWidth field
