@@ -170,7 +170,7 @@ renderCell :: Cell -> SquareOnScreen -> View -> Picture
 renderCell cell ((x,y),(w,h)) view = let
 		aliveColor = red
 		deadColor = blue --mixColors 0.0 1.0 blue black
-		path = [(x,y),(x,y+h),(x+w,y+h),(x+w,y)]
+		path = [(x,y),(x,y+h),(x+w,y+h),(x+w,y),(x,y)]
 	in case cell of
 	Cell Dead -> Color deadColor $ Line path
 	Cell Alive -> Color aliveColor $ Polygon path -- TO DO: render cell
