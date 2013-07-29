@@ -89,8 +89,8 @@ framerate = 1
 startWorld :: Int -> Int -> World
 startWorld xSize ySize = World {
 	wSettings = settingsStart,
-	-- wField = randomField 50 50 0
-	wField = field xSize ySize
+	wField = randomField xSize ySize 0
+	--wField = field xSize ySize
 }
 
 dispSettings = DisplaySettings {
