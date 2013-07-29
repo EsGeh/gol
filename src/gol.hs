@@ -96,9 +96,9 @@ startWorld xSize ySize mode = World {
 
 dispSettings = DisplaySettings {
 	windowPos = (100,100),
-	windowSize = (800,600),
+	windowSize = (600,600),
 
-	fieldPos = (10,10),
+	fieldPos = (0,0),
 	fieldSize = (600,600)
 }
 
