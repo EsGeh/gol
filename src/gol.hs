@@ -86,11 +86,12 @@ framerate :: Int
 framerate = 1
 
 
-startWorld :: Int -> Int -> World
-startWorld xSize ySize = World {
+startWorld :: Int -> Int -> Int -> World
+startWorld xSize ySize mode = World {
 	wSettings = settingsStart,
-	-- wField = randomField 50 50 0
-	wField = field xSize ySize
+	if mode == 0
+		then wField = randomField 50 50 0
+		else wField = field xSize ySize
 }
 
 dispSettings = DisplaySettings {
@@ -108,13 +109,15 @@ dispSettings = DisplaySettings {
 
 main = do
 	args <- getArgs
-	xSize <- return (read (args !! 0))
-	ySize <- return (read (args !! 1))
+	--xSize <- return (read (args !! 0))
+	--ySize <- return (read (args !! 1))
+	Size <- return (read (args !! 0))
+	Mode <- return (read (args !! 1))-- initialise random 0 or empty 1 field
 	play
 		disp
 		bgColor
 		framerate
-		(startWorld xSize ySize)
+		(startWorld Size Size)
 		renderWorld
 		eventHandler
 		moveWorld
