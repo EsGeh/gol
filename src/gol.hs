@@ -87,12 +87,15 @@ framerate = 1
 
 
 startWorld :: Int -> Int -> Int -> World
-startWorld xSize ySize mode = World {
-	wSettings = settingsStart,
-	if mode == 0
-		then wField = randomField 50 50 0
-		else wField = field xSize ySize
-}
+startWorld xSize ySize mode = case mode of
+	1 -> World {
+			wSettings = settingsStart,
+			wField = randomField xSize ySize 0
+		}
+	0 ->  World {
+			wSettings = settingsStart,
+			wField = field xSize ySize
+		}
 
 dispSettings = DisplaySettings {
 	windowPos = (100,100),
@@ -104,23 +107,27 @@ dispSettings = DisplaySettings {
 
 
 ----------------------------------------------------------------------------------
--- main :
+-- main : given arguments field size and mode
 ----------------------------------------------------------------------------------
 
 main = do
 	args <- getArgs
-	--xSize <- return (read (args !! 0))
-	--ySize <- return (read (args !! 1))
-	Size <- return (read (args !! 0))
-	Mode <- return (read (args !! 1))-- initialise random 0 or empty 1 field
-	play
-		disp
-		bgColor
-		framerate
-		(startWorld Size Size)
-		renderWorld
-		eventHandler
-		moveWorld
+	if length args /= 3
+		then do
+			putStrLn "USAGE: gol xGridSize yGridSize Mode"
+			putStrLn "where Mode = (0 | 1) for (empty | random) initialised field"
+		else do
+			sizeX <- return (read (args !! 0))
+			sizeY <- return (read (args !! 1))
+			mode <- return (read (args !! 2))-- initialise random 0 or empty 1 field
+			play
+				disp
+				bgColor
+				framerate
+				(startWorld sizeX sizeY mode)
+				renderWorld
+				eventHandler
+				moveWorld
 
 
 ----------------------------------------------------------------------------------
